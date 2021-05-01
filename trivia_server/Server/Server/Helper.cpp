@@ -1,0 +1,95 @@
+#pragma comment(lib, "Ws2_32.lib")
+
+#include "Helper.h"
+#include <iostream>
+#include <string>
+#include <iomanip>
+#include <sstream>
+
+#define SEND_ERR "Error while trying to send message to client"
+#define SENDING "Sending: "
+#define SEPARATE "-----------------------------"
+#define RECEIVE_ERROR "Error while recieving from socket: "
+
+using namespace std;
+
+// recieves the type code of the message from socket (first byte)
+// and returns the code. if no message found in the socket returns 0 (which means the client disconnected)
+int Helper::getMessageTypeCode(SOCKET sc)
+{
+	char* s = getPartFromSocket(sc, 3);
+	std::string msg(s);
+
+	if (msg == "")
+		return 0;
+
+	int res = std::atoi(s);
+	delete s;
+	return  res;
+}
+
+
+
+// send data to socket
+// this is private function
+void Helper::sendData(SOCKET sc, std::string message) 
+{
+	const char* data = message.c_str();
+	std::cout << SENDING << message << std::endl;
+	std::cout << SEPARATE << endl;
+	
+	if (send(sc, data, message.size(), 0) == INVALID_SOCKET)
+	{
+		throw std::exception(SEND_ERR);
+	}
+}
+
+int Helper::getIntPartFromSocket(SOCKET sc, int bytesNum)
+{
+	char* s= getPartFromSocket(sc, bytesNum, 0);
+	return atoi(s);
+}
+
+string Helper::getStringPartFromSocket(SOCKET sc, int bytesNum)
+{
+	char* s = getPartFromSocket(sc, bytesNum, 0);
+	string res(s);
+	return res;
+}
+
+// recieve data from socket according byteSize
+// this is private function
+char* Helper::getPartFromSocket(SOCKET sc, int bytesNum)
+{
+	return getPartFromSocket(sc, bytesNum, 0);
+}
+
+char* Helper::getPartFromSocket(SOCKET sc, int bytesNum, int flags)
+{
+	if (bytesNum == 0)
+	{
+		return "";
+	}
+
+	char* data = new char[bytesNum + 1];
+	int res = recv(sc, data, bytesNum, flags);
+
+	if (res == INVALID_SOCKET)
+	{
+		std::string s = RECEIVE_ERROR;
+		s += std::to_string(sc);
+		throw std::exception(s.c_str());
+	}
+
+	data[bytesNum] = 0;
+	return data;
+}
+
+
+string Helper::getPaddedNumber(int num, int digits)
+{
+	std::ostringstream ostr; 
+	ostr <<  std::setw(digits) << std::setfill('0') << num;
+	return ostr.str();
+
+}
